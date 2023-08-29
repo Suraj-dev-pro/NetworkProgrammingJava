@@ -1,37 +1,39 @@
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.util.Scanner;
 
 public class UDPClient {
+    private static final String SERVER_IP = "127.0.0.1";
+    private static final int SERVER_PORT = 12345;
+
     public static void main(String[] args) {
         try {
-            // Server address and port
-            InetAddress serverAddress = InetAddress.getByName("localhost");
-            int serverPort = 5000;
-
-            // Create socket
             DatagramSocket socket = new DatagramSocket();
+            InetAddress serverAddress = InetAddress.getByName(SERVER_IP);
 
-            // Message to send
-            String message = "Hello, server!";
-            byte[] sendData = message.getBytes();
+            Scanner scanner = new Scanner(System.in);
 
-            // Create packet with the message and server details
-            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, serverAddress, serverPort);
+            System.out.print("Enter your name: ");
+            String name = scanner.nextLine();
 
-            // Send the packet to the server
-            socket.send(sendPacket);
+            while (true) {
+                System.out.print("You: ");
+                String message = scanner.nextLine();
 
-            // Receive response from the server
-            byte[] receiveData = new byte[1024];
-            DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-            socket.receive(receivePacket);
+                String fullMessage = name + ": " + message;
+                byte[] sendData = fullMessage.getBytes();
+                DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, serverAddress, SERVER_PORT);
+                socket.send(sendPacket);
 
-            // Extract and print the response message
-            String responseMessage = new String(receivePacket.getData(), 0, receivePacket.getLength());
-            System.out.println("Server response: " + responseMessage);
+                byte[] receiveBuffer = new byte[1024];
+                DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
+                socket.receive(receivePacket);
 
-            // Close the socket
-            socket.close();
+                String receivedMessage = new String(receivePacket.getData(), 0, receivePacket.getLength());
+                System.out.println("Server: " + receivedMessage);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

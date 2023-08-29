@@ -1,44 +1,41 @@
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.util.ArrayList;
+import java.util.List;
 
 public class UDPServer {
+    private static final int PORT = 12345;
+    private static List<DatagramPacket> clients = new ArrayList<>();
+
     public static void main(String[] args) {
         try {
-            // Server port
-            int serverPort = 5000;
-
-            // Create socket
-            DatagramSocket socket = new DatagramSocket(serverPort);
-
-            System.out.println("Server started. Waiting for incoming messages...");
+            DatagramSocket socket = new DatagramSocket(PORT);
+            System.out.println("Server is listening on port " + PORT);
 
             while (true) {
-                // Receive request from the client
-                byte[] receiveData = new byte[1024];
-                DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+                byte[] receiveBuffer = new byte[1024];
+                DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
                 socket.receive(receivePacket);
 
-                // Extract the message and client details
                 String message = new String(receivePacket.getData(), 0, receivePacket.getLength());
-                InetAddress clientAddress = receivePacket.getAddress();
-                int clientPort = receivePacket.getPort();
+                System.out.println("Received from " + receivePacket.getAddress() + ": " + message);
 
-                System.out.println("Received message from client: " + message);
-
-                // Prepare the response message
-                String responseMessage = "Hello, client!";
-
-                // Convert the response message to bytes
-                byte[] sendData = responseMessage.getBytes();
-
-                // Create packet with the response message and client details
-                DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, clientAddress, clientPort);
-
-                // Send the response to the client
-                socket.send(sendPacket);
+                clients.add(receivePacket);
+                broadcast(message);
             }
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private static void broadcast(String message) throws IOException {
+        for (DatagramPacket client : clients) {
+            DatagramSocket socket = new DatagramSocket();
+            DatagramPacket sendPacket = new DatagramPacket(message.getBytes(), message.length(),
+                    client.getAddress(), client.getPort());
+            socket.send(sendPacket);
+            socket.close();
         }
     }
 }
